@@ -1,3 +1,10 @@
+/**
+ * @file line_tracer.cpp
+ * @brief Line trace programm.
+ * @author Kumikomi
+ * @date 05 Sep. 2018
+ */
+
 #include "serial.hpp"
 
 #include "opencv2/highgui/highgui.hpp"
@@ -17,12 +24,17 @@
 using namespace cv;
 using namespace std;
 
-const int SPEED = 100;  //motor base speed
-const int TARGET = 30;  //target x px
-const int KP =  1.7;    //coefficient for propotional control
+//! motor base speed
+const int SPEED = 100;
+//! target x px
+const int TARGET = 30;
+//! coefficient for propotional control
+const int KP =  1.7;    
 const double STOP_TIME = 3.0;
-const string SERIAL_PORT("/dev/ttyUSB0");  //Arduino uno device port
-const speed_t BAUDRATE = B9600;     //baudrate to communicate with Arduino uno
+//! Arduino uno device port
+const string SERIAL_PORT("/dev/ttyUSB0");
+//! baudrate to communicate with Arduino uno
+const speed_t BAUDRATE = B9600;
 const int WHITE = 255;
 const int BLACK = 0;
 
@@ -30,6 +42,9 @@ void binalize_image(Mat &src_img, Mat &dst_img);
 void count_white_pixels(Mat &image, int *ave_of_pix_val, int *edge_pix_idx);
 void update_state(Serial ser, int ave_of_pix_val, int edge_pix_idx);
 
+/*
+ * @brief A function for autonomous driving.
+ */
 int main(int argc, char **argv){
     // open a serial port and a camera
     Serial ser(SERIAL_PORT);
@@ -71,6 +86,11 @@ int main(int argc, char **argv){
     return 0;
 }
 
+/*
+ * @brief This function binalizes an image
+ * @param src_img[in] An input image
+ * @param dst_img[out] An binalized image
+ */
 void binalize_image(Mat &src_img, Mat &dst_img){
     Mat gray_img, binalized_img;
     resize(
@@ -85,6 +105,12 @@ void binalize_image(Mat &src_img, Mat &dst_img){
     );
 }
 
+/*
+ * @brief This function counts while pixels on the center line.
+ * @param image[in] An input image
+ * @param *ave_of_pix_val[out] Average of pixels value on the center line
+ * @param *edge_pix_idx[out] The edge of index of a pixel on the  center line
+ */
 void count_white_pixels(Mat &image, int *ave_of_pix_val, int *edge_pix_idx){
     int sum_of_pix_val = 0;
     int count = 0;
@@ -116,6 +142,12 @@ void count_white_pixels(Mat &image, int *ave_of_pix_val, int *edge_pix_idx){
     *ave_of_pix_val = sum_of_pix_val / image.cols;
 }
 
+/*
+ * @brief This function updates a state for runnning
+ * @param ser[in] An object of Serial class
+ * @param ave_of_pix_val[in] Average of pixels value on the center line
+ * @param edge_pix_idx[in] The edge of index of a pixel on the  center line
+ */
 void update_state(Serial ser, int ave_of_pix_val, int edge_pix_idx){
 
     // stop a front of stop line

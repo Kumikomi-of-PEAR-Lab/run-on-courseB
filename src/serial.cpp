@@ -1,3 +1,10 @@
+/**
+ * @file serial.cpp
+ * @brief Serial communication module for Linux to send commands to mbot
+ * @author Kenta Arai
+ * @date 05 Sep. 2018
+ */
+
 #include "serial.hpp"
 
 #include <iostream>
@@ -10,6 +17,10 @@
 #include <termios.h>
 #include <unistd.h>
 
+/*
+ * @brief A constructor for Class Serial. This opens a serial port.
+ * @param port_name[in] a port name used to serial communication
+ */
 Serial::Serial(std::string port_name){
     // open the port "port_name"
     fd = open(port_name.c_str(), O_RDWR);
@@ -35,11 +46,18 @@ Serial::Serial(std::string port_name){
     ioctl(fd, TCSETS, &tio);
 }
 
+/*
+ * @brief A destructor for Class Serial. This closes the serial port.
+ */
 Serial::~Serial(){
     std::cout << "Close the serial port" << std::endl;
     close(fd);
 }
 
+/* 
+ * @brief A function to send a command.
+ * @param[in] an command
+ */
 void Serial::write_command(std::string command){
     write(fd, command.c_str(), command.size());
 }
