@@ -1,5 +1,4 @@
 #include "serial.hpp"
-
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
@@ -7,6 +6,7 @@
 #include <sstream>
 #include <string>
 #include <chrono>
+#include <list>
 
 #include <sys/time.h>
 #include <sys/ioctl.h>
@@ -17,18 +17,39 @@
 using namespace cv;
 using namespace std;
 
+//constant of line color
+const int WHITE = 255;
+const int BLACK = 0;
+
+//constant of image size
+const int BINARY_IMAGE_WIDTH = 160;
+const int BINARY_IMAGE_HEIGHT = 120;
+
+//constant for LINE detection
+const int LINE_WIDTH_THRESHOLD = 10;
+const int STOP_LINE_THRESHOLD = BINARY_IMAGE_WIDTH * ((double)2/3);
+
+//constant for control
 const int SPEED = 100;  //motor base speed
 const int TARGET = 30;  //target x px
 const int KP =  1.7;    //coefficient for propotional control
 const double STOP_TIME = 3.0;
+
+//constant for serial
 const string SERIAL_PORT("/dev/ttyUSB0");  //Arduino uno device port
 const speed_t BAUDRATE = B9600;     //baudrate to communicate with Arduino uno
-const int WHITE = 255;
-const int BLACK = 0;
 
-void binalize_image(Mat &src_img, Mat &dst_img);
-void count_white_pixels(Mat &image, int *ave_of_pix_val, int *edge_pix_idx);
-void update_state(Serial ser, int ave_of_pix_val, int edge_pix_idx);
+//data type for LINE
+struct LINE{
+  int left_edge,
+  int right_edge
+};
+
+void binalizeImage(Mat &src_img, Mat &dst_img);
+int detectLine(Mat&,int,list<Line>&);
+void updateState(Serial,int,lint<line>&);
+//void count_white_pixels(Mat &image, int *ave_of_pix_val, int *edge_pix_idx);
+//void update_state(Serial ser, int ave_of_pix_val, int edge_pix_idx);
 
 int main(int argc, char **argv){
     // open a serial port and a camera
@@ -55,8 +76,11 @@ int main(int argc, char **argv){
         start = end;
 
         // count white pixels
-        int ave_of_pix_val, edge_pix_idx;
-        count_white_pixels(binalized_img, &ave_of_pix_val, &edge_pix_idx);
+        int total_white_pix;
+        list<LINE> center_line_list;
+        total_white_pix = detectLine(binalized_img,image.rows / 2,center_line_list);
+        //int ave_of_pix_val, edge_pix_idx;
+        //count_white_pixels(binalized_img, &ave_of_pix_val, &edge_pix_idx);
 
         // update a state
         update_state(ser, ave_of_pix_val, edge_pix_idx);
@@ -71,7 +95,7 @@ int main(int argc, char **argv){
     return 0;
 }
 
-void binalize_image(Mat &src_img, Mat &dst_img){
+void binalizeImage(Mat &src_img, Mat &dst_img){
     Mat gray_img, binalized_img;
     resize(
         src_img, src_img,
@@ -85,6 +109,73 @@ void binalize_image(Mat &src_img, Mat &dst_img){
     );
 }
 
+int detectLines(Mat &image,int base_height,list<LINE>& line_list){
+  int left_edge = 0;
+  
+  //Make line list.
+  for(int x=0; x < src.cols; x++){
+    pix_val = image.at<uchar>(base_height,x);
+    white_pix_count = pix_val == WHITE ? 1 : 0;
+    
+    if(pix_val == WHITE){
+      if(x!=0 || src.at<uchar>(base_height,x-1) == BLACK)
+        left_edge = x;
+
+      count ++;
+    }
+    else {
+      //if line is enough thick, add to line list.
+      if(count > LINE_WIDTH_THRESHOLD){
+        LINE line = {left_edge,x-1};
+        line_list.emplace_back(line);
+      }
+      count = 0;
+    }
+  }
+
+  //If right terminal is black and line is thicker than threshold ,Add line to line list. 
+  if(src.at<uchar>(base_height,x) == WHITE && count > LINE_WIDTH_THRESHOLD){
+    LINE line = {left_edge,x-1};
+    line_list.emplace_back(line);
+  }
+  return white_pix_count;
+}
+
+void updatState(Serial ser, int total_white_pix, list<Line>& line_list){
+    
+    if(STOP_LINE_THRESHOLD < total_white_pix){ 
+        cout << "Stop line detected." << endl;
+
+        // send a command to stop
+        string command("r,0,0;");
+        ser.write_command(command);
+
+        // stop while 3 second
+        sleep(STOP_TIME);
+
+        // send a command to run
+        command = string("r,70,70;");
+        ser.write_command(command);
+
+    // spin if cannot find a line
+    }else if(line_list.empty()){
+        cout << "Line not found." << endl;
+
+        // send a command to curve
+        string command("r,100,20;");
+        ser.write_command(command);
+
+    // curve with P control
+    }else if(line_list.back.right_edge < 80){              
+        cout << "x = " << edge_pix_idx << endl;
+        cout << "diff_x_D = " << edge_pix_idx << endl;
+        int l_vel = SPEED + (edge_pix_idx - TARGET) * KP;
+        int r_vel = SPEED - (edge_pix_idx - TARGET) * KP;
+        string command = string("r,") + to_string(r_vel) + string(",") + to_string(l_vel) + string(";");
+        ser.write_command(command);
+    }
+}
+/*
 void count_white_pixels(Mat &image, int *ave_of_pix_val, int *edge_pix_idx){
     int sum_of_pix_val = 0;
     int count = 0;
@@ -133,7 +224,7 @@ void update_state(Serial ser, int ave_of_pix_val, int edge_pix_idx){
         command = string("r,70,70;");
         ser.write_command(command);
 
-    // curve if cannot find a line
+    // spin if cannot find a line
     }else if(ave_of_pix_val == 0 || edge_pix_idx == 0){
         cout << "Line not found." << endl;
 
@@ -151,4 +242,4 @@ void update_state(Serial ser, int ave_of_pix_val, int edge_pix_idx){
         ser.write_command(command);
     }
 }
-
+*/
