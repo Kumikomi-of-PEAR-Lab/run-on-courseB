@@ -1,0 +1,80 @@
+\hypertarget{line__tracer_8cpp}{}\section{src/line\+\_\+tracer.cpp File Reference}
+\label{line__tracer_8cpp}\index{src/line\+\_\+tracer.\+cpp@{src/line\+\_\+tracer.\+cpp}}
+
+
+Line trace programm.  
+
+
+{\ttfamily \#include \char`\"{}serial.\+hpp\char`\"{}}\\*
+{\ttfamily \#include \char`\"{}opencv2/highgui/highgui.\+hpp\char`\"{}}\\*
+{\ttfamily \#include \char`\"{}opencv2/imgproc/imgproc.\+hpp\char`\"{}}\\*
+{\ttfamily \#include $<$iostream$>$}\\*
+{\ttfamily \#include $<$sstream$>$}\\*
+{\ttfamily \#include $<$string$>$}\\*
+{\ttfamily \#include $<$chrono$>$}\\*
+{\ttfamily \#include $<$sys/time.\+h$>$}\\*
+{\ttfamily \#include $<$sys/ioctl.\+h$>$}\\*
+{\ttfamily \#include $<$fcntl.\+h$>$}\\*
+{\ttfamily \#include $<$termios.\+h$>$}\\*
+{\ttfamily \#include $<$unistd.\+h$>$}\\*
+Include dependency graph for line\+\_\+tracer.\+cpp\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=350pt]{line__tracer_8cpp__incl}
+\end{center}
+\end{figure}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+const string \hyperlink{line__tracer_8cpp_aa10d13c46fc27ae1de1e146c6500b590}{S\+E\+R\+I\+A\+L\+\_\+\+P\+O\+RT} (\char`\"{}/dev/tty\+U\+S\+B0\char`\"{})\hypertarget{line__tracer_8cpp_aa10d13c46fc27ae1de1e146c6500b590}{}\label{line__tracer_8cpp_aa10d13c46fc27ae1de1e146c6500b590}
+
+\begin{DoxyCompactList}\small\item\em Arduino uno device port. \end{DoxyCompactList}\item 
+void {\bfseries binalize\+\_\+image} (Mat \&src\+\_\+img, Mat \&dst\+\_\+img)\hypertarget{line__tracer_8cpp_a5843c4ed067d6d2701481c46f702d165}{}\label{line__tracer_8cpp_a5843c4ed067d6d2701481c46f702d165}
+
+\item 
+void {\bfseries count\+\_\+white\+\_\+pixels} (Mat \&image, int $\ast$ave\+\_\+of\+\_\+pix\+\_\+val, int $\ast$edge\+\_\+pix\+\_\+idx)\hypertarget{line__tracer_8cpp_aee271cdb4d6c5ad8104d2a679eee1af7}{}\label{line__tracer_8cpp_aee271cdb4d6c5ad8104d2a679eee1af7}
+
+\item 
+void {\bfseries update\+\_\+state} (\hyperlink{classSerial}{Serial} ser, int ave\+\_\+of\+\_\+pix\+\_\+val, int edge\+\_\+pix\+\_\+idx)\hypertarget{line__tracer_8cpp_ab13fa819908194cfcde2a1f1b59b569f}{}\label{line__tracer_8cpp_ab13fa819908194cfcde2a1f1b59b569f}
+
+\item 
+int {\bfseries main} (int argc, char $\ast$$\ast$argv)\hypertarget{line__tracer_8cpp_a3c04138a5bfe5d72780bb7e82a18e627}{}\label{line__tracer_8cpp_a3c04138a5bfe5d72780bb7e82a18e627}
+
+\end{DoxyCompactItemize}
+\subsection*{Variables}
+\begin{DoxyCompactItemize}
+\item 
+const int \hyperlink{line__tracer_8cpp_a447efb7d562d7dd631b6a985ff88b5e0}{S\+P\+E\+ED} = 100\hypertarget{line__tracer_8cpp_a447efb7d562d7dd631b6a985ff88b5e0}{}\label{line__tracer_8cpp_a447efb7d562d7dd631b6a985ff88b5e0}
+
+\begin{DoxyCompactList}\small\item\em motor base speed \end{DoxyCompactList}\item 
+const int \hyperlink{line__tracer_8cpp_a56c8b1c930d21b18ab01f027401d05a4}{T\+A\+R\+G\+ET} = 30\hypertarget{line__tracer_8cpp_a56c8b1c930d21b18ab01f027401d05a4}{}\label{line__tracer_8cpp_a56c8b1c930d21b18ab01f027401d05a4}
+
+\begin{DoxyCompactList}\small\item\em target x px \end{DoxyCompactList}\item 
+const int \hyperlink{line__tracer_8cpp_a22889a0e83ef2e401d35d49c4bc1f9af}{KP} = 1.\+7\hypertarget{line__tracer_8cpp_a22889a0e83ef2e401d35d49c4bc1f9af}{}\label{line__tracer_8cpp_a22889a0e83ef2e401d35d49c4bc1f9af}
+
+\begin{DoxyCompactList}\small\item\em coefficient for propotional control \end{DoxyCompactList}\item 
+const double {\bfseries S\+T\+O\+P\+\_\+\+T\+I\+ME} = 3.\+0\hypertarget{line__tracer_8cpp_add7d6ba7ac0358626cdef9cefbea6bf5}{}\label{line__tracer_8cpp_add7d6ba7ac0358626cdef9cefbea6bf5}
+
+\item 
+const speed\+\_\+t \hyperlink{line__tracer_8cpp_a0302c316ec1bb7fd0ac27b926ca113fc}{B\+A\+U\+D\+R\+A\+TE} = B9600\hypertarget{line__tracer_8cpp_a0302c316ec1bb7fd0ac27b926ca113fc}{}\label{line__tracer_8cpp_a0302c316ec1bb7fd0ac27b926ca113fc}
+
+\begin{DoxyCompactList}\small\item\em baudrate to communicate with Arduino uno \end{DoxyCompactList}\item 
+const int {\bfseries W\+H\+I\+TE} = 255\hypertarget{line__tracer_8cpp_a6fdc54ca55874b2959f7d77967f78dc2}{}\label{line__tracer_8cpp_a6fdc54ca55874b2959f7d77967f78dc2}
+
+\item 
+const int {\bfseries B\+L\+A\+CK} = 0\hypertarget{line__tracer_8cpp_a5b27e565b0566bdf2097265d0987c156}{}\label{line__tracer_8cpp_a5b27e565b0566bdf2097265d0987c156}
+
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+Line trace programm. 
+
+\begin{DoxyAuthor}{Author}
+Kumikomi 
+\end{DoxyAuthor}
+\begin{DoxyDate}{Date}
+05 Sep. 2018 
+\end{DoxyDate}
