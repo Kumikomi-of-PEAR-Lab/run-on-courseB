@@ -83,7 +83,8 @@ int main(int argc, char **argv){
         //count_white_pixels(binalized_img, &ave_of_pix_val, &edge_pix_idx);
 
         // update a state
-        update_state(ser, ave_of_pix_val, edge_pix_idx);
+        updateState(ser,center_line_list);
+        //update_state(ser, ave_of_pix_val, edge_pix_idx);
 
         // show images
         line(src_img, Point(0,80), Point(180,80), Scalar(0,200,0), 3, CV_AA);
@@ -166,7 +167,7 @@ void updatState(Serial ser, int total_white_pix, list<Line>& line_list){
         ser.write_command(command);
 
     // curve with P control
-    }else if(line_list.back.right_edge < 80){              
+    }else if(line_list.back().right_edge < 80){              
         cout << "x = " << edge_pix_idx << endl;
         cout << "diff_x_D = " << edge_pix_idx << endl;
         int l_vel = SPEED + (edge_pix_idx - TARGET) * KP;
