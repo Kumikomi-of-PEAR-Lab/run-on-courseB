@@ -6,19 +6,16 @@
  */
 
 #include "serial.hpp"
-
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
 #include <iostream>
 #include <sstream>
-#include <string>
 #include <chrono>
 
 #include <sys/time.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
-#include <termios.h>
 #include <unistd.h>
 
 using namespace cv;

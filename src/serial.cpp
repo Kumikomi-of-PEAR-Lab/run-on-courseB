@@ -14,7 +14,6 @@
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
-#include <termios.h>
 #include <unistd.h>
 
 /*
