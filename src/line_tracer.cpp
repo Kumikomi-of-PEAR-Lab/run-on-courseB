@@ -34,10 +34,14 @@ const int SPEED = 100;  //motor base speed
 const int TARGET = 30;  //target x px
 const int KP =  1.7;    //coefficient for propotional control
 const double STOP_TIME = 3.0;
+const bool debug = true;
 
 //constant for serial
 const string SERIAL_PORT("/dev/ttyUSB0");  //Arduino uno device port
 const speed_t BAUDRATE = B9600;     //baudrate to communicate with Arduino uno
+
+//for debug
+bool showimg = false;
 
 //data type for LINE
 struct LINE{
@@ -45,40 +49,41 @@ struct LINE{
   int right_edge;
 };
 
-void binalizeImage(Mat &src_img, Mat &dst_img);
+void binalizeImage(Mat& src_img, Mat& resized_img, Mat& dst_img);
 int detectLines(Mat &image,int base_height,list<LINE>& line_list);
-void updateState(Serial ser, int total_white_pix, list<LINE>& line_list);
+void updateState(Serial& ser, int total_white_pix, list<LINE>& line_list);
 //void count_white_pixels(Mat &image, int *ave_of_pix_val, int *edge_pix_idx);
 //void update_state(Serial ser, int ave_of_pix_val, int edge_pix_idx);
 
-int main(int argc, char **argv){
+int main(int argc, char** argv){
     // open a serial port and a camera
     Serial ser(SERIAL_PORT);
     VideoCapture cap;
     cap.open(0);
-    if(!cap.isOpened())
+    if(!cap.isOpened()){
+	cout << "cant open camera." << endl;
         return -1;
-    
+    }
     // get start time
     std::chrono::system_clock::time_point start, end;
     start = std::chrono::system_clock::now();   
 
     while(1){
-        // binalize image
-        Mat src_img, binalized_img;
+      // binalize image
+      Mat src_img, resized_img, binalized_img;
         cap >> src_img;
-        binalizeImage(src_img, binalized_img);
+        binalizeImage(src_img, resized_img, binalized_img);
 
         // calculate frame rate
         end = std::chrono::system_clock::now();
-        double frame_rate = 1. / (int)std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+        double frame_rate = 1000. / (int)std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
         cout << "frame rate: " << frame_rate << "fps" << endl;
         start = end;
 
         // count white pixels
-        int total_white_pix;
+        int total_white_pix = 0;
         list<LINE> center_line_list;
-        total_white_pix = detectLines(binalized_img,binalized_img.rows / 2,center_line_list);
+        total_white_pix = detectLines(binalized_img, binalized_img.rows/2, center_line_list);
         //int ave_of_pix_val, edge_pix_idx;
         //count_white_pixels(binalized_img, &ave_of_pix_val, &edge_pix_idx);
 
@@ -87,25 +92,27 @@ int main(int argc, char **argv){
         //update_state(ser, ave_of_pix_val, edge_pix_idx);
 
         // show images
-        line(src_img, Point(0,80), Point(180,80), Scalar(0,200,0), 3, CV_AA);
-        imshow("src_img", src_img);
-        imshow("binalized_img", binalized_img);
-        waitKey(1);
+	/*if(showimg){
+        	line(resized_img, Point(0,80), Point(160,80), Scalar(0,200,0), 3, CV_AA);
+	        imshow("resized_img", resized_img);
+	        imshow("binalized_img", binalized_img);
+	        waitKey(1);
+	}*/
     }
 
     return 0;
 }
 
-void binalizeImage(Mat &src_img, Mat &dst_img){
-    Mat gray_img, binalized_img;
+void binalizeImage(Mat &src_img, Mat& resized_img, Mat &dst_img){
+    Mat gray_img;
     resize(
-        src_img, src_img,
+        src_img, resized_img,
         Size(),
-        180.0 / src_img.cols, 160.0 / src_img.rows
+        ((double)BINARY_IMAGE_WIDTH)/src_img.cols, ((double)BINARY_IMAGE_HEIGHT)/src_img.rows
     );
-    cvtColor(src_img, gray_img, CV_BGR2GRAY);
+    cvtColor(resized_img, gray_img, CV_BGR2GRAY);
     threshold(
-        gray_img, binalized_img,
+        gray_img, dst_img,
         160, WHITE, CV_THRESH_BINARY
     );
 }
@@ -114,9 +121,9 @@ int detectLines(Mat &image,int base_height,list<LINE>& line_list){
   int left_edge = 0;
   int count = 0;
   int white_pix_count = 0;
-
   //Make line list.
   for(int x=0; x < image.cols; x++){
+    //cout << "img_cols =" << x << endl;
     int pix_val = image.at<uchar>(base_height,x);
     white_pix_count += pix_val == WHITE ? 1 : 0;    
 
@@ -144,8 +151,8 @@ int detectLines(Mat &image,int base_height,list<LINE>& line_list){
   return white_pix_count;
 }
 
-void updateState(Serial ser, int total_white_pix, list<LINE>& line_list){
-    
+void updateState(Serial& ser, int total_white_pix, list<LINE>& line_list){
+   
     if(STOP_LINE_THRESHOLD < total_white_pix){ 
         cout << "Stop line detected." << endl;
 
@@ -169,12 +176,17 @@ void updateState(Serial ser, int total_white_pix, list<LINE>& line_list){
         ser.write_command(command);
 
     // curve with P control
-    }else if(line_list.back().right_edge < 80){              
-        cout << "x = " << line_list.back().right_edge<< endl;
-        cout << "diff_x_D = " << line_list.back().right_edge<< endl;
-        int l_vel = SPEED + (line_list.back().right_edge < TARGET) * KP;
-        int r_vel = SPEED - (line_list.back().right_edge - TARGET) * KP;
-        string command = string("r,") + to_string(r_vel) + string(",") + to_string(l_vel) + string(";");
+    }else if(line_list.back().right_edge < BINARY_IMAGE_WIDTH/2){             
+	int diff_x_D = line_list.back().right_edge - TARGET; 
+        cout << "x = " << line_list.back().right_edge<< " ";
+        cout << "diff_x_D = " << diff_x_D << " ";
+        int l_vel = SPEED + diff_x_D * KP;
+        int r_vel = SPEED - diff_x_D * KP;
+	cout << "vel=" << l_vel << "," << r_vel <<" ";
+
+	//        string command = string("r,") + to_string(r_vel) + string(",") + to_string(l_vel) + string(";");
+        string command = "r,"+to_string(r_vel)+","+to_string(l_vel)+";";
+	cout << "command " << command << endl; 
         ser.write_command(command);
     }
 }
