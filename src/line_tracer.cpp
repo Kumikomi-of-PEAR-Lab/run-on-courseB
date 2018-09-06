@@ -41,13 +41,13 @@ const speed_t BAUDRATE = B9600;     //baudrate to communicate with Arduino uno
 
 //data type for LINE
 struct LINE{
-  int left_edge,
-  int right_edge
+  int left_edge;
+  int right_edge;
 };
 
 void binalizeImage(Mat &src_img, Mat &dst_img);
-int detectLine(Mat&,int,list<Line>&);
-void updateState(Serial,int,lint<line>&);
+int detectLines(Mat &image,int base_height,list<LINE>& line_list);
+void updateState(Serial ser, int total_white_pix, list<LINE>& line_list);
 //void count_white_pixels(Mat &image, int *ave_of_pix_val, int *edge_pix_idx);
 //void update_state(Serial ser, int ave_of_pix_val, int edge_pix_idx);
 
@@ -67,7 +67,7 @@ int main(int argc, char **argv){
         // binalize image
         Mat src_img, binalized_img;
         cap >> src_img;
-        binalize_image(src_img, binalized_img);
+        binalizeImage(src_img, binalized_img);
 
         // calculate frame rate
         end = std::chrono::system_clock::now();
@@ -78,12 +78,12 @@ int main(int argc, char **argv){
         // count white pixels
         int total_white_pix;
         list<LINE> center_line_list;
-        total_white_pix = detectLine(binalized_img,image.rows / 2,center_line_list);
+        total_white_pix = detectLines(binalized_img,binalized_img.rows / 2,center_line_list);
         //int ave_of_pix_val, edge_pix_idx;
         //count_white_pixels(binalized_img, &ave_of_pix_val, &edge_pix_idx);
 
         // update a state
-        updateState(ser,center_line_list);
+        updateState(ser,total_white_pix,center_line_list);
         //update_state(ser, ave_of_pix_val, edge_pix_idx);
 
         // show images
@@ -112,14 +112,16 @@ void binalizeImage(Mat &src_img, Mat &dst_img){
 
 int detectLines(Mat &image,int base_height,list<LINE>& line_list){
   int left_edge = 0;
-  
+  int count = 0;
+  int white_pix_count = 0;
+
   //Make line list.
-  for(int x=0; x < src.cols; x++){
-    pix_val = image.at<uchar>(base_height,x);
-    white_pix_count = pix_val == WHITE ? 1 : 0;
-    
+  for(int x=0; x < image.cols; x++){
+    int pix_val = image.at<uchar>(base_height,x);
+    white_pix_count += pix_val == WHITE ? 1 : 0;    
+
     if(pix_val == WHITE){
-      if(x!=0 || src.at<uchar>(base_height,x-1) == BLACK)
+      if(x!=0 || image.at<uchar>(base_height,x-1) == BLACK)
         left_edge = x;
 
       count ++;
@@ -135,14 +137,14 @@ int detectLines(Mat &image,int base_height,list<LINE>& line_list){
   }
 
   //If right terminal is black and line is thicker than threshold ,Add line to line list. 
-  if(src.at<uchar>(base_height,x) == WHITE && count > LINE_WIDTH_THRESHOLD){
-    LINE line = {left_edge,x-1};
+  if(image.at<uchar>(base_height,image.cols-1) == WHITE && count > LINE_WIDTH_THRESHOLD){
+    LINE line = {left_edge,image.cols-1};
     line_list.emplace_back(line);
   }
   return white_pix_count;
 }
 
-void updatState(Serial ser, int total_white_pix, list<Line>& line_list){
+void updateState(Serial ser, int total_white_pix, list<LINE>& line_list){
     
     if(STOP_LINE_THRESHOLD < total_white_pix){ 
         cout << "Stop line detected." << endl;
@@ -168,10 +170,10 @@ void updatState(Serial ser, int total_white_pix, list<Line>& line_list){
 
     // curve with P control
     }else if(line_list.back().right_edge < 80){              
-        cout << "x = " << edge_pix_idx << endl;
-        cout << "diff_x_D = " << edge_pix_idx << endl;
-        int l_vel = SPEED + (edge_pix_idx - TARGET) * KP;
-        int r_vel = SPEED - (edge_pix_idx - TARGET) * KP;
+        cout << "x = " << line_list.back().right_edge<< endl;
+        cout << "diff_x_D = " << line_list.back().right_edge<< endl;
+        int l_vel = SPEED + (line_list.back().right_edge < TARGET) * KP;
+        int r_vel = SPEED - (line_list.back().right_edge - TARGET) * KP;
         string command = string("r,") + to_string(r_vel) + string(",") + to_string(l_vel) + string(";");
         ser.write_command(command);
     }
