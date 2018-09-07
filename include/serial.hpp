@@ -12,7 +12,9 @@ class Serial{
     public:
         Serial(std::string port_name);
         ~Serial();
-        void write_command(std::string command);
+        void sendRunCommand(int right_power, int left_power);
+    private:
+        void writeString(std::string str);
 };
 
 #endif

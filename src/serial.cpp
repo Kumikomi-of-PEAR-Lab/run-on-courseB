@@ -40,7 +40,17 @@ Serial::~Serial(){
     close(fd);
 }
 
-void Serial::write_command(std::string command){
-    write(fd, command.c_str(), command.size());
+void Serial::sendRunCommand(int right_power, int left_power){
+    std::string command = string("r,")
+    command += std::to_string(right_power);
+    command += string(",");
+    command += std::to_string(left_power);
+    command += string(";");
+
+    writeString();
+}
+
+void Serial::writeString(std::string str){
+    write(fd, str.c_str(), str.size());
 }
 
