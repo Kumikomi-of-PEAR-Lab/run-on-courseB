@@ -1,2 +1,3 @@
 build
-test/build
+test/detect_color/build
+test/detect_color/result/*.jpg
